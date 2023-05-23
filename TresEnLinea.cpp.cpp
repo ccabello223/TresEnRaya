@@ -363,7 +363,7 @@ void Negocio::jugadorVsComputadora(char c[3][3])
         }
         else
         {
-            introIa(c);
+            introIa(c, 'O');
             id = 2;
         }
         j = ganador(c);
