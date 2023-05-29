@@ -282,7 +282,11 @@ private:
     void jugadorVsComputadora(char c[3][3]);
     void computadoraVsComputadora(char c[3][3]);
     void introUser(char (*c)[3], char determinado = 'X');
-    void introIa(char (*c)[3], char determinado = 'X');
+    void introIa(char (*c)[3], char determinado = 'X', int *yDestino = nullptr, int *xDestino = nullptr);
+    void copiarTablero(char (*origen)[3], char (*destino)[3]);
+    void coordenadasParaGanar(char caracter, char tableroOriginal[3][3], int *yDestino, int *xDestino);
+    
+
 
 public:
     Negocio(Vista vista, Datos datos);
@@ -363,7 +367,7 @@ void Negocio::jugadorVsComputadora(char c[3][3])
         }
         else
         {
-            introIa(c, 'O');
+            introIa(c, 'O',0,0);
             id = 2;
         }
         j = ganador(c);
@@ -407,7 +411,7 @@ void Negocio::computadoraVsComputadora(char c[3][3])
         }
         else
         {
-            introIa(c, 'O');
+            introIa(c, 'O',0,0);
             id = 2;
         }
         j = ganador(c);
@@ -595,29 +599,306 @@ void Negocio::introUser(char (*c)[3], char determinado)
     jugador.setTiempo(segundos);
 }
 
-void Negocio::introIa(char (*c)[3], char determinado)
+int contarHaciaArriba(int x, int y, char caracter, char tablero[3][3])
 {
-    int i, j, k;
-    char aux;
-    srand(time(nullptr));
-    do
+    // Determinar el índice de inicio de y para el bucle.
+    int yInicio = (y - 3 >= 0) ? y - 3 + 1 : 0;
+    int contador = 0;
+    
+    // Recorrer hacia arriba desde yInicio hasta y, contando caracteres iguales.
+    for (; yInicio <= y; yInicio++)
     {
-        k = 0;
-        i = rand() % 3;
-        j = rand() % 3;
-        if (c[i][j] == 'X' || c[i][j] == 'O')
+        if (tablero[yInicio][x] == 'O')
         {
-            k = 1;
+            contador++; // Incrementar el contador si se encuentra un caracter igual.
         }
-
-    } while (k == 1);
-    c[i][j] = determinado;
-    jugador.setFila(i);
-    jugador.setColumna(j);
-    jugador.setTipoJugador("COMPUTADORA");
-    jugador.setSimboloJugador('O');
-    jugador.setTiempo(0);
+        else
+        {
+            contador = 0; // Reiniciar el contador si se encuentra un caracter diferente.
+        }
+    }
+    
+    return contador; // Devolver el contador final.
 }
+
+
+int contarHaciaDerecha(int x, int y, char caracter, char tablero[3][3])
+{
+    // Determinar el índice de fin de x para el bucle.
+    int xFin = (x + 3 < 3) ? x + 3 - 1 : 3 - 1;
+    int contador = 0;
+    
+    // Recorrer hacia la derecha desde x hasta xFin, contando caracteres iguales.
+    for (; x <= xFin; x++)
+    {
+        if (tablero[y][x] == caracter)
+        {
+            contador++; // Incrementar el contador si se encuentra un caracter igual.
+        }
+        else
+        {
+            contador = 0; // Reiniciar el contador si se encuentra un caracter diferente.
+        }
+    }
+    
+    return contador; // Devolver el contador final.
+}
+
+int contarHaciaArribaDerecha(int x, int y, char caracter, char tablero[3][3])
+{
+    // Determinar el índice de fin de x para el bucle.
+    int xFin = (x + 3 < 3) ? x + 3 - 1 : 3 - 1;
+    // Determinar el índice de inicio de y para el bucle.
+    int yInicio = (y - 3 >= 0) ? y - 3 + 1 : 0;
+    int contador = 0;
+    
+    // Recorrer en la dirección hacia arriba-derecha desde (x, y) hasta (xFin, yInicio), contando caracteres iguales.
+    while (x <= xFin && yInicio <= y)
+    {
+        if (tablero[y][x] == caracter)
+        {
+            contador++; // Incrementar el contador si se encuentra un caracter igual.
+        }
+        else
+        {
+            contador = 0; // Reiniciar el contador si se encuentra un caracter diferente.
+        }
+        x++; // Avanzar hacia la derecha.
+        y--; // Retroceder hacia arriba.
+    }
+    
+    return contador; // Devolver el contador final.
+}
+
+int contarHaciaAbajoDerecha(int x, int y, char caracter, char tablero[3][3])
+{
+    // Determinar el índice de fin de x para el bucle.
+    int xFin = (x + 3 < 3) ? x + 3 - 1 : 3 - 1;
+    // Determinar el índice de fin de y para el bucle.
+    int yFin = (y + 3 < 3) ? y + 3 - 1 : 3 - 1;
+    int contador = 0;
+    
+    // Recorrer en la dirección hacia abajo-derecha desde (x, y) hasta (xFin, yFin), contando caracteres iguales.
+    while (x <= xFin && y <= yFin)
+    {
+        if (tablero[y][x] == caracter)
+        {
+            contador++; // Incrementar el contador si se encuentra un caracter igual.
+        }
+        else
+        {
+            contador = 0; // Reiniciar el contador si se encuentra un caracter diferente.
+        }
+        x++; // Avanzar hacia la derecha.
+        y++; // Avanzar hacia abajo.
+    }
+    
+    return contador; // Devolver el contador final.
+}
+// Verifica si las coordenadas del tablero están vacías
+bool coordenadasVacias(int y, int x, char (*tablero)[3])
+{
+
+
+    return tablero[y][x] != 'X'  &&  tablero[y][x] != 'O';
+}
+
+void Negocio::copiarTablero(char (*origen)[3], char (*destino)[3])
+{
+    int i, j;
+    for (i = 0; i < 3; i++)
+    {
+        for (j = 0; j < 3; j++)
+        {
+            destino[i][j] = origen[i][j];
+        }
+    }
+}
+
+int comprobarSiGana(char caracter, char tablero[3][3])
+{
+    int y;
+    for (y = 0; y < 3; y++)
+    {
+        int x;
+        for (x = 0; x < 3; x++)
+        {
+
+            if (
+                contarHaciaArriba(x, y, caracter, tablero) >= 3 ||
+                contarHaciaDerecha(x, y, caracter,tablero) >= 3 ||
+                contarHaciaArribaDerecha(x, y, caracter, tablero) >= 3 ||
+                contarHaciaAbajoDerecha(x, y, caracter, tablero) >= 3)
+            {
+                return 1;
+            }
+        }
+    }
+    // Terminamos de recorrer y no conectó
+    return 0;
+}
+void mostrarTablero(char c[3][3])
+{
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            if (j < 2)
+            {
+                cout << " " << c[i][j] << " |";
+            }
+            else
+            {
+                cout << " " << c[i][j] << " ";
+            }
+        }
+        if (i < 2)
+        {
+            cout << "\n-----------\n";
+        }
+    }
+    cout << endl;
+}
+
+
+// Esta función encuentra las coordenadas para ganar el juego para un jugador específico en un tablero dado.
+// Parámetros:
+// - caracter: El caracter del jugador.
+// - tableroOriginal: El tablero original en forma de matriz.
+// - yDestino: Puntero a la variable que almacenará la coordenada y para ganar.
+// - xDestino: Puntero a la variable que almacenará la coordenada x para ganar.
+void Negocio::coordenadasParaGanar(char caracter, char tableroOriginal[3][3], int *yDestino, int *xDestino)
+{
+    char copiaTablero[3][3];
+    int y, x;
+    
+    copiarTablero(tableroOriginal, copiaTablero); // Copiar el tablero original una vez antes del bucle
+    
+    // Recorrer todas las coordenadas del tablero
+    for (y = 0; y < 3; y++)
+    {
+        for (x = 0; x < 3; x++)
+        {
+            // Verificar si la coordenada está vacía en la copia del tablero
+            if (coordenadasVacias(y, x, copiaTablero))
+            {
+                // Colocar el caracter del jugador en la coordenada vacía
+                copiaTablero[y][x] = 'O';
+                
+                // Comprobar si el jugador gana con esta jugada
+                if (comprobarSiGana('O', copiaTablero))
+                {
+                    // Si el jugador gana, guardar las coordenadas de victoria y salir del bucle
+                    *yDestino = y;
+                    *xDestino = x;
+                    return;
+                }
+            }
+        }
+    }
+    
+    // Si no se encuentra una jugada para ganar, establecer las coordenadas de destino como -1
+    *yDestino = *xDestino = -1;
+}
+
+
+bool verificarLinea(char c[3][3], char jugador, char tapar)
+{
+    // Verificar filas
+    for (int i = 0; i < 3; i++) {
+        // Comprobar si hay una línea completa en la fila con el jugador y sin el valor de "tapar"
+        if ((c[i][0] == jugador && c[i][1] == jugador && c[i][2] != tapar) ||
+            (c[i][0] == jugador && c[i][1] != tapar && c[i][2] == jugador) ||
+            (c[i][0] != tapar && c[i][1] == jugador && c[i][2] == jugador)) {
+            // Si se cumple la condición, buscar una posición vacía en la fila y colocar "tapar"
+            for (int j = 0; j < 3; j++) {
+                if (c[i][j] != jugador && c[i][j] != tapar) {
+                    c[i][j] = tapar;
+                    return true; // Se encontró una línea completa y se tapó una posición
+                }
+            }
+        }
+    }
+
+    // Verificar columnas
+    for (int j = 0; j < 3; j++) {
+        // Comprobar si hay una línea completa en la columna con el jugador y sin el valor de "tapar"
+        if ((c[0][j] == jugador && c[1][j] == jugador && c[2][j] != tapar) ||
+            (c[0][j] == jugador && c[1][j] != tapar && c[2][j] == jugador) ||
+            (c[0][j] != tapar && c[1][j] == jugador && c[2][j] == jugador)) {
+            // Si se cumple la condición, buscar una posición vacía en la columna y colocar "tapar"
+            for (int i = 0; i < 3; i++) {
+                if (c[i][j] != jugador && c[i][j] != tapar) {
+                    c[i][j] = tapar;
+                    return true; // Se encontró una línea completa y se tapó una posición
+                }
+            }
+        }
+    }
+
+    // Verificar diagonales
+    // Comprobar si hay una línea completa en la diagonal principal con el jugador y sin el valor de "tapar"
+    if ((c[0][0] == jugador && c[1][1] == jugador && c[2][2] != tapar) ||
+        (c[0][0] == jugador && c[1][1] != tapar && c[2][2] == jugador) ||
+        (c[0][0] != tapar && c[1][1] == jugador && c[2][2] == jugador)) {
+        // Si se cumple la condición, buscar una posición vacía en la diagonal principal y colocar "tapar"
+        for (int i = 0; i < 3; i++) {
+            if (c[i][i] != jugador && c[i][i] != tapar) {
+                c[i][i] = tapar;
+                return true; // Se encontró una línea completa y se tapó una posición
+            }
+        }
+    }
+
+    // Comprobar si hay una línea completa en la diagonal secundaria con el jugador y sin el valor de "tapar"
+    if ((c[0][2] == jugador && c[1][1] == jugador && c[2][0] != tapar) ||
+        (c[0][2] == jugador && c[1][1] != tapar && c[2][0] == jugador) ||
+        (c[0][2] != tapar && c[1][1] == jugador && c[2][0] == jugador)) {
+        // Si se cumple la condición, buscar una posición vacía en la diagonal secundaria y colocar "tapar"
+        for (int i = 0; i < 3; i++) {
+            if (c[i][2 - i] != jugador && c[i][2 - i] != tapar) {
+                c[i][2 - i] = tapar;
+                return true; // Se encontró una línea completa y se tapó una posición
+            }
+        }
+    }
+
+    return false; // No se encontró ninguna línea completa para tapar
+}
+
+
+// Esta función representa la lógica de la introducción de la IA en el juego.
+// Parámetros:
+// - c: El tablero en forma de matriz.
+// - determinado: El caracter determinado para la IA ('X' o 'O').
+// - yDestino: Puntero a la variable que almacenará la coordenada y de la jugada de la IA.
+// - xDestino: Puntero a la variable que almacenará la coordenada x de la jugada de la IA.
+void Negocio::introIa(char (*c)[3], char determinado, int *yDestino, int *xDestino )
+{
+    int y, x, conteoJugador, conteoOponente;
+
+    // Verificar si hay una línea completa en el tablero para el jugador humano ('X') y la tapa
+    if (verificarLinea(c, 'X', 'O')) {
+    } else {
+        // Si no hay una línea completa para el jugador humano, se determina la jugada de la IA.
+
+        // Obtener las coordenadas para ganar el juego para la IA ('O')
+        coordenadasParaGanar('O', c, &y, &x);
+
+        // Colocar el caracter de la IA en las coordenadas obtenidas
+        c[y][x] = 'O';
+
+        // Actualizar los datos del jugador de la IA
+        jugador.setFila(y);
+        jugador.setColumna(x);
+        jugador.setTipoJugador("COMPUTADORA");
+        jugador.setSimboloJugador('O');
+        jugador.setTiempo(0);
+        
+        return;
+    }
+}
+
 
 int Negocio::ganador(char c[3][3])
 {
