@@ -5,6 +5,8 @@
 #include <fstream>
 // Para toma los segundos
 #include <chrono>
+
+#include <sstream>
 using namespace std;
 
 /*CLASE JUGADOR*/
@@ -14,7 +16,7 @@ public:
     // Constructor por defecto
     Jugador(); 
     // Constructor con parámetros                                                                                                    
-    Jugador(int id, string movimiento, int tiempo, string tipoJugador, char simboloJugador, int fila, int columna,int jugadas);
+    Jugador(int id, string movimiento, int tiempo, string tipoJugador, char simboloJugador, int fila, int columna);
 
     // Setters
     void setId(int id);
@@ -24,7 +26,6 @@ public:
     void setSimboloJugador(char simboloJugador);
     void setFila(int fila);
     void setColumna(int columna);
-    void setJugadas(int jugadas);
 
     // Getters
     int getId();
@@ -34,7 +35,6 @@ public:
     char getSimboloJugador();
     int getFila();
     int getColumna();
-    int getJugadas();
 
     // Otros métodos
     void imprimirDatos();
@@ -47,7 +47,7 @@ private:
     char simboloJugador;
     int fila;
     int columna;
-    int jugadas;
+;
 };
 
 // Constructor sin parametros
@@ -60,11 +60,10 @@ Jugador::Jugador()
     simboloJugador = '-';
     fila = 0;
     columna = 0;
-    jugadas = 0;
 }
 
 // Constructor con parametros
-Jugador::Jugador(int id, string movimiento, int tiempo, string tipoJugador, char simboloJugador, int fila, int columna,int jugadas)
+Jugador::Jugador(int id, string movimiento, int tiempo, string tipoJugador, char simboloJugador, int fila, int columna)
 {
     this->id = id;
     this->movimiento = movimiento;
@@ -73,7 +72,6 @@ Jugador::Jugador(int id, string movimiento, int tiempo, string tipoJugador, char
     this->simboloJugador = simboloJugador;
     this->fila = fila;
     this->columna = columna;
-    this->jugadas = jugadas;
 }
 
 void Jugador::setId(int id)
@@ -91,10 +89,6 @@ void Jugador::setTiempo(int tiempo)
     this->tiempo = tiempo;
 }
 
-void Jugador::setJugadas(int jugadas)
-{
-    this->jugadas = jugadas;
-}
 
 void Jugador::setTipoJugador(string tipoJugador)
 {
@@ -150,10 +144,7 @@ int Jugador::getColumna()
     return columna;
 }
 
-int Jugador::getJugadas()
-{
-    return jugadas;
-}
+
 
 void Jugador::imprimirDatos()
 {
@@ -177,6 +168,7 @@ class Vista
 public:
     Vista();
     void mostrarMenu();
+    void mostrarMenuRestablecer();
     void mostrarTablero(char c[3][3]);
     void asignaValores(char c[3][3]);
 
@@ -189,7 +181,20 @@ Vista::Vista()
 
 void Vista::mostrarMenu()
 {
+	system("cls");
     cout << "----- MENU -----" << endl;
+    cout << "1. Jugador vs Jugador" << endl;
+    cout << "2. Jugador vs IA" << endl;
+    cout << "3. IA vs IA" << endl;
+    cout << "4. Restablecer partida anterior" << endl;
+    cout << "5. Salir" << endl;
+    cout << "Seleccione una opcion: ";
+}
+
+void Vista::mostrarMenuRestablecer()
+{
+	system("cls");
+    cout << "----- RESTABLECER PARTIDA -----" << endl;
     cout << "1. Jugador vs Jugador" << endl;
     cout << "2. Jugador vs IA" << endl;
     cout << "3. IA vs IA" << endl;
@@ -244,37 +249,71 @@ class Datos
 {
 public:
     Datos();
-    Datos(Jugador jugador);
-    void crearOrEscribirTXT(Jugador jugador);
+    Datos(Jugador jugador,string TXT,char c[3][3]);
+    void crearOrEscribirTXT(Jugador jugador,string nombreTXT);
+    void leerArchivo(string nombreTXT, char c[3][3]);
+    void limpiarArchivo(string nombreTXT);
 
 private:
 };
 
 Datos::Datos() {}
 
-Datos::Datos(Jugador jugador)
+Datos::Datos(Jugador jugador,string nombreTXT,char c[3][3])
 {
-    crearOrEscribirTXT(jugador);
+    crearOrEscribirTXT(jugador,nombreTXT);
+    leerArchivo(nombreTXT,c);
+    limpiarArchivo(nombreTXT);
 }
 
-void Datos::crearOrEscribirTXT(Jugador jugador)
+
+
+
+void Datos::crearOrEscribirTXT(Jugador jugador,string nombreTXT)
 {
     // Crear i escribir en el archivo
-    ofstream archivo("data.txt", ios::app); // ios::app = Este modo de apertura indica que el archivo se abrirá en modo de adición
+    ofstream archivo(nombreTXT, ios::app); // ios::app = Este modo de apertura indica que el archivo se abrirá en modo de adición
     if (archivo.is_open())
     {
         archivo
             << jugador.getId() << ", " << jugador.getMovimiento() << ", " << jugador.getTiempo() << ", "
             << jugador.getId() << ", " << jugador.getTipoJugador() << ", "
             << jugador.getSimboloJugador() << ", "
-            << "[" << jugador.getColumna()
-            << "], [" << jugador.getFila() << "]" << endl;
+            << "[" << jugador.getFila()
+            << "], [" <<  jugador.getColumna() << "]" <<endl;
+           
         archivo.close();
     }
     else
     {
         cout << "Error abriendo el archivo." << endl;
     }
+}
+
+
+void Datos::leerArchivo(string nombreTXT, char c[3][3]) {
+    std::ifstream file(nombreTXT);
+    if (!file) {
+        std::cout << "No se pudo abrir el archivo." << std::endl;
+        return;
+    }
+
+    int fila, col, valor;
+    char jugador;
+    std::string line;
+
+    while (std::getline(file, line)) {
+        std::sscanf(line.c_str(), "%*d, %*[^,], %*d, %*d, %*[^,], %c, [%d], [%d]", &jugador, &fila, &col);
+        c[fila][col] = jugador;
+    }
+
+    file.close();
+}
+
+void Datos::limpiarArchivo(string nombreTXT)
+{
+    std::ofstream archivo(nombreTXT); // Abrir el archivo en modo de escritura
+    archivo.close(); // Cerrar el archivo, esto eliminará su contenido
 }
 
 /* -----------------------------------------------*/
@@ -293,6 +332,7 @@ private:
     char c[3][3];
     int ganador(char c[3][3]);
     void escogerOpcion();
+    void restablecerPartida();
     void jugadorVsJugador(char c[3][3]);
     void jugadorVsComputadora(char c[3][3]);
     void computadoraVsComputadora(char c[3][3]);
@@ -300,6 +340,13 @@ private:
     void introIa(char (*c)[3], char determinado = 'X', int *iDestino = nullptr, int *jDestino = nullptr);
     void copiarTablero(char (*origen)[3], char (*destino)[3]);
     void coordenadasParaGanar(char caracter, char tableroOriginal[3][3], int *iDestino, int *jDestino);
+    int contarColumnas(int j, int i, char caracter, char tablero[3][3]);
+    int contarFilas(int j, int i, char caracter, char tablero[3][3]);
+    int contarDiagonal(int j, int i, char caracter, char tablero[3][3]);
+    int contarDiagonalInversa(int j, int i, char caracter, char tablero[3][3]);
+    bool coordenadasVacias(int i, int j, char (*tablero)[3]);
+    int comprobarVictoria(char caracter, char tablero[3][3]);
+    bool verificarLinea(char c[3][3], char jugador, char tapar,int *iDestino, int *jDestino);
     
 
 
@@ -318,6 +365,8 @@ Negocio::Negocio(Vista vista, Datos datos)
 // Metodos
 
 // Función que ejecuta el juego
+
+
 void Negocio::ejecutarPrograma()
 {
     escogerOpcion();
@@ -325,15 +374,16 @@ void Negocio::ejecutarPrograma()
 
 void Negocio::jugadorVsJugador(char c[3][3])
 {
+
     int i = 0, j, id;
-    vista.asignaValores(c);
+
     do
     {
         system("cls");
         vista.mostrarTablero(c);
         if (i % 2 == 0)
         {
-            introUser(c);
+            introUser(c,'X');
             id = 1;
         }
         else
@@ -346,7 +396,7 @@ void Negocio::jugadorVsJugador(char c[3][3])
         i++;
 
         this->datos.crearOrEscribirTXT(Jugador(id, "movimiento " + to_string(i), jugador.getTiempo(), jugador.getTipoJugador(),
-                                               jugador.getSimboloJugador(), jugador.getFila(), jugador.getColumna(),0));
+                                               jugador.getSimboloJugador(), jugador.getFila(), jugador.getColumna()),"jugadorVsjugador.txt");
 
     } while (i <= 9 && j == -1);
 
@@ -355,36 +405,40 @@ void Negocio::jugadorVsJugador(char c[3][3])
 
     if (j == 0)
     {
+        datos.limpiarArchivo("jugadorVsjugador.txt");
         cout << "Ha ganado la X" << endl << endl;
     }
     else if (j == 1)
     {
+        datos.limpiarArchivo("jugadorVsjugador.txt");
         cout << "Ha ganado la O" << endl << endl;
     }
     else
     {
+        datos.limpiarArchivo("jugadorVsjugador.txt");
         cout << "Empate" << endl << endl;
     }
+     system("pause");
 }
 
 void Negocio::jugadorVsComputadora(char c[3][3])
 {
+
     int i = 0, j, id;
-    jugador.setJugadas(0);
-    vista.asignaValores(c);
+    jugador.setMovimiento("0");
     do
     {
         system("cls");
         vista.mostrarTablero(c);
         if (i % 2 == 0)
         {
-        	jugador.setJugadas(i);
+        	jugador.setMovimiento(to_string(i));
             introUser(c);
             id = 1;
         }
         else
         {
-        	jugador.setJugadas(i);
+        	jugador.setMovimiento(to_string(i));
             introIa(c, 'O',0,0);
             id = 2;
         }
@@ -393,7 +447,7 @@ void Negocio::jugadorVsComputadora(char c[3][3])
         i++;
 
         this->datos.crearOrEscribirTXT(Jugador(id, "movimiento " + to_string(i), jugador.getTiempo(), jugador.getTipoJugador(),
-                                               jugador.getSimboloJugador(), jugador.getFila(), jugador.getColumna(),0));
+                                               jugador.getSimboloJugador(), jugador.getFila(), jugador.getColumna()),"jugadorVscomputadora.txt");
 
     } while (i <= 9 && j == -1);
 
@@ -402,22 +456,27 @@ void Negocio::jugadorVsComputadora(char c[3][3])
 
     if (j == 0)
     {
+        datos.limpiarArchivo("jugadorVscomputadora.txt");
         cout << "Haz ganado" << endl;
     }
     else if (j == 1)
     {
+        datos.limpiarArchivo("jugadorVscomputadora.txt");
         cout << "Haz perdido" << endl;
     }
     else
     {
+        datos.limpiarArchivo("jugadorVscomputadora.txt");
         cout << "Empate" << endl;
     }
+    system("pause");
 }
 
 void Negocio::computadoraVsComputadora(char c[3][3])
 {
     int i = 0, j, id;
-    jugador.setJugadas(0);
+
+    jugador.setMovimiento("0");
     vista.asignaValores(c);
     do
     {
@@ -428,14 +487,14 @@ void Negocio::computadoraVsComputadora(char c[3][3])
         vista.mostrarTablero(c);
         if (i % 2 == 0)
         {
-        	jugador.setJugadas(i);
+        	jugador.setMovimiento(to_string(i));
             introIa(c, 'X',0,0);
 
             id = 1;
         }
         else
         {
-        	jugador.setJugadas(i);
+        	jugador.setMovimiento(to_string(i));
             introIa(c, 'O',0,0);
             id = 2;
         }
@@ -444,7 +503,7 @@ void Negocio::computadoraVsComputadora(char c[3][3])
         i++;
 
         this->datos.crearOrEscribirTXT(Jugador(id, "movimiento " + to_string(i), jugador.getTiempo(), jugador.getTipoJugador(),
-                                               jugador.getSimboloJugador(), jugador.getFila(), jugador.getColumna(),0));
+                                               jugador.getSimboloJugador(), jugador.getFila(), jugador.getColumna()),"computadoraVscomputadora.txt");
 
     } while (i <= 9 && j == -1);
 
@@ -453,16 +512,55 @@ void Negocio::computadoraVsComputadora(char c[3][3])
 
     if (j == 0)
     {
-        cout << "Haz ganado" << endl;
+        datos.limpiarArchivo("computadoraVscomputadora.txt");
+        cout << "Ha ganado la X" << endl;
     }
     else if (j == 1)
     {
-        cout << "Haz perdido" << endl;
+        datos.limpiarArchivo("computadoraVscomputadora.txt");
+        cout << "Ha ganado la O" << endl;
     }
     else
     {
+        datos.limpiarArchivo("computadoraVscomputadora.txt");
         cout << "Empate" << endl;
     }
+     system("pause");
+}
+void Negocio::restablecerPartida()
+{
+    int opcion;
+    do
+    {
+        this->vista.mostrarMenuRestablecer();
+
+        cin >> opcion;
+
+        switch (opcion)
+        {
+        case 1:
+        	vista.asignaValores(c);
+        	datos.leerArchivo("jugadorVsjugador.txt", c);
+        	jugadorVsJugador(c);
+            break;
+        case 2:
+        	vista.asignaValores(c);
+        	datos.leerArchivo("jugadorVscomputadora.txt", c);
+        	vista.mostrarTablero(c);
+        	jugadorVsComputadora(c);
+            break;
+        case 3:
+        	vista.asignaValores(c);
+        	datos.leerArchivo("computadoraVscomputadora.txt", c);
+        	computadoraVsComputadora(c);
+            break;
+        case 4:
+            cout << "Saliendo del programa..." << endl;
+            break;
+        default:
+            cout << "Opcion invalida. Intente de nuevo." << endl;
+        }
+    } while (opcion != 4);
 }
 
 void Negocio::escogerOpcion()
@@ -478,18 +576,24 @@ void Negocio::escogerOpcion()
         {
         case 1:
             // código para jugar Jugador vs Jugador
+            vista.asignaValores(c);
+            datos.limpiarArchivo("jugadorVsjugador.txt");
             jugadorVsJugador(c);
             break;
         case 2:
             // código para jugar Jugador vs IA
+            vista.asignaValores(c);
+            datos.limpiarArchivo("jugadorVscomputadora.txt");
             jugadorVsComputadora(c);
             break;
         case 3:
             // código para jugar IA vs IA
+            vista.asignaValores(c);
+            datos.limpiarArchivo("computadoraVscomputadora.txt");
             computadoraVsComputadora(c);
             break;
         case 4:
-            cout << "Restablecer una partida" << endl;
+             restablecerPartida();
             break;
         case 5:
             cout << "Saliendo del programa..." << endl;
@@ -499,6 +603,7 @@ void Negocio::escogerOpcion()
         }
     } while (opcion != 5);
 }
+
 
 // funcion que evalua los movimientos del usuario
 void Negocio::introUser(char (*c)[3], char determinado)
@@ -620,21 +725,22 @@ void Negocio::introUser(char (*c)[3], char determinado)
     jugador.setFila(i);
     jugador.setColumna(j);
     jugador.setTipoJugador("HUMANO");
-    jugador.setSimboloJugador('X');
+    jugador.setSimboloJugador(determinado);
     jugador.setTiempo(segundos);
 }
 
-int contarHaciaArriba(int j, int i, char caracter, char tablero[3][3])
+int Negocio::contarColumnas(int j, int i, char caracter, char tablero[3][3])
 {
     // Determinar el índice de inicio de i para el bucle.
     int iInicio = (i - 3 >= 0) ? i - 3 + 1 : 0;
     int contador = 0;
-    
+
     // Recorrer hacia arriba desde iInicio hasta i, contando caracteres iguales.
     for (; iInicio <= i; iInicio++)
     {
         if (tablero[iInicio][j] == 'O')
         {
+
             contador++; // Incrementar el contador si se encuentra un caracter igual.
         }
         else
@@ -647,7 +753,7 @@ int contarHaciaArriba(int j, int i, char caracter, char tablero[3][3])
 }
 
 
-int contarHaciaDerecha(int j, int i, char caracter, char tablero[3][3])
+int Negocio::contarFilas(int j, int i, char caracter, char tablero[3][3])
 {
     // Determinar el índice de fin de j para el bucle.
     int jFin = (j + 3 < 3) ? j + 3 - 1 : 3 - 1;
@@ -658,6 +764,7 @@ int contarHaciaDerecha(int j, int i, char caracter, char tablero[3][3])
     {
         if (tablero[i][j] == caracter)
         {
+
             contador++; // Incrementar el contador si se encuentra un caracter igual.
         }
         else
@@ -668,8 +775,9 @@ int contarHaciaDerecha(int j, int i, char caracter, char tablero[3][3])
     
     return contador; // Devolver el contador final.
 }
+// "/"
 
-int contarHaciaArribaDerecha(int j, int i, char caracter, char tablero[3][3])
+int Negocio::contarDiagonal(int j, int i, char caracter, char tablero[3][3])
 {
     // Determinar el índice de fin de j para el bucle.
     int jFin = (j + 3 < 3) ? j + 3 - 1 : 3 - 1;
@@ -695,7 +803,8 @@ int contarHaciaArribaDerecha(int j, int i, char caracter, char tablero[3][3])
     return contador; // Devolver el contador final.
 }
 
-int contarHaciaAbajoDerecha(int j, int i, char caracter, char tablero[3][3])
+// "\ "
+int Negocio::contarDiagonalInversa(int j, int i, char caracter, char tablero[3][3])
 {
     // Determinar el índice de fin de j para el bucle.
     int jFin = (j + 3 < 3) ? j + 3 - 1 : 3 - 1;
@@ -721,7 +830,7 @@ int contarHaciaAbajoDerecha(int j, int i, char caracter, char tablero[3][3])
     return contador; // Devolver el contador final.
 }
 // Verifica si las coordenadas del tablero están vacías
-bool coordenadasVacias(int i, int j, char (*tablero)[3])
+bool Negocio::coordenadasVacias(int i, int j, char (*tablero)[3])
 {
 
 
@@ -740,7 +849,7 @@ void Negocio::copiarTablero(char (*origen)[3], char (*destino)[3])
     }
 }
 
-int comprobarSiGana(char caracter, char tablero[3][3])
+int Negocio::comprobarVictoria(char caracter, char tablero[3][3])
 {
     int i;
     for (i = 0; i < 3; i++)
@@ -750,10 +859,10 @@ int comprobarSiGana(char caracter, char tablero[3][3])
         {
 
             if (
-                contarHaciaArriba(j, i, caracter, tablero) >= 3 ||
-                contarHaciaDerecha(j, i, caracter,tablero) >= 3 ||
-                contarHaciaArribaDerecha(j, i, caracter, tablero) >= 3 ||
-                contarHaciaAbajoDerecha(j, i, caracter, tablero) >= 3)
+                contarColumnas(j, i, caracter, tablero) >= 3 ||
+                contarFilas(j, i, caracter,tablero) >= 3 ||
+                contarDiagonal(j, i, caracter, tablero) >= 3 ||
+                contarDiagonalInversa(j, i, caracter, tablero) >= 3)
             {
                 return 1;
             }
@@ -763,33 +872,8 @@ int comprobarSiGana(char caracter, char tablero[3][3])
     // Terminamos de recorrer i no conectó
     return 0;
 }
-void mostrarTablero(char c[3][3])
-{
-    for (int i = 0; i < 3; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            if (j < 2)
-            {
-                cout << " " << c[i][j] << " |";
-            }
-            else
-            {
-                cout << " " << c[i][j] << " ";
-            }
-        }
-        if (i < 2)
-        {
-            cout << "\n-----------\n";
-        }
-    }
-    cout << endl;
-}
 
 
-// Esta función encuentra las coordenadas para ganar el juego para un jugador específico en un tablero dado.
-// Parámetros:
-// - caracter: El caracter del jugador.
 // - tableroOriginal: El tablero original en forma de matriz.
 // - iDestino: Puntero a la variable que almacenará la coordenada i para ganar.
 // - jDestino: Puntero a la variable que almacenará la coordenada j para ganar.
@@ -812,12 +896,13 @@ void Negocio::coordenadasParaGanar(char caracter, char tableroOriginal[3][3], in
                 copiaTablero[i][j] = caracter;
                 
                 // Comprobar si el jugador gana con esta jugada
-                if (comprobarSiGana(caracter, copiaTablero))
+                if (comprobarVictoria(caracter, copiaTablero))
                 {
 
                     // Si el jugador gana, guardar las coordenadas de victoria i salir del bucle
                     *iDestino = i;
                     *jDestino = j;
+    		
                     return;
                 }
             }
@@ -829,7 +914,7 @@ void Negocio::coordenadasParaGanar(char caracter, char tableroOriginal[3][3], in
 }
 
 
-bool verificarLinea(char c[3][3], char jugador, char tapar)
+bool Negocio::verificarLinea(char c[3][3], char jugador, char tapar,int *iDestino, int *jDestino)
 {
     // Verificar filas
     for (int i = 0; i < 3; i++) {
@@ -840,7 +925,8 @@ bool verificarLinea(char c[3][3], char jugador, char tapar)
             // Si se cumple la condición, buscar una posición vacía en la fila i colocar "tapar"
             for (int j = 0; j < 3; j++) {
                 if (c[i][j] != jugador && c[i][j] != tapar) {
-                    c[i][j] = tapar;
+                    *iDestino = i;
+                    *jDestino = j;
                     return true; // Se encontró una línea completa i se tapó una posición
                 }
             }
@@ -856,7 +942,8 @@ bool verificarLinea(char c[3][3], char jugador, char tapar)
             // Si se cumple la condición, buscar una posición vacía en la columna i colocar "tapar"
             for (int i = 0; i < 3; i++) {
                 if (c[i][j] != jugador && c[i][j] != tapar) {
-                    c[i][j] = tapar;
+                    *iDestino = i;
+                    *jDestino = j;
                     return true; // Se encontró una línea completa i se tapó una posición
                 }
             }
@@ -871,7 +958,8 @@ bool verificarLinea(char c[3][3], char jugador, char tapar)
         // Si se cumple la condición, buscar una posición vacía en la diagonal principal i colocar "tapar"
         for (int i = 0; i < 3; i++) {
             if (c[i][i] != jugador && c[i][i] != tapar) {
-                c[i][i] = tapar;
+                    *iDestino = i;
+                    *jDestino = i;
                 return true; // Se encontró una línea completa i se tapó una posición
             }
         }
@@ -884,7 +972,8 @@ bool verificarLinea(char c[3][3], char jugador, char tapar)
         // Si se cumple la condición, buscar una posición vacía en la diagonal secundaria i colocar "tapar"
         for (int i = 0; i < 3; i++) {
             if (c[i][2 - i] != jugador && c[i][2 - i] != tapar) {
-                c[i][2 - i] = tapar;
+                *iDestino = i;
+                *jDestino = 2 - i;
                 return true; // Se encontró una línea completa i se tapó una posición
             }
         }
@@ -894,10 +983,7 @@ bool verificarLinea(char c[3][3], char jugador, char tapar)
 }
 
 
-// Esta función representa la lógica de la introducción de la IA en el juego.
-// Parámetros:
-// - c: El tablero en forma de matriz.
-// - determinado: El caracter determinado para la IA ('X' o 'O').
+
 // - iDestino: Puntero a la variable que almacenará la coordenada i de la jugada de la IA.
 // - jDestino: Puntero a la variable que almacenará la coordenada j de la jugada de la IA.
 void Negocio::introIa(char (*c)[3], char determinado, int *iDestino, int *jDestino )
@@ -908,28 +994,29 @@ void Negocio::introIa(char (*c)[3], char determinado, int *iDestino, int *jDesti
 
 	
 	
-	
-	
 	if(determinado=='O'){
 		oponente='X';
 	}else{
 		oponente='O';
 	}
 	
-	
-	
-	
     // Verificar si hay una línea completa en el tablero para el jugador humano ('X') i la tapa
-
     
-    if (verificarLinea(c, oponente,determinado)){
-    		system("pause");
+    if (verificarLinea(c, oponente,determinado,&i, &j)){
+        c[i][j] = determinado;
+            cout<<"verificar linea i,j "<<i<<", "<<j<<endl;
+    		jugador.setFila(i);
+        	jugador.setColumna(j);
+        	jugador.setTipoJugador("COMPUTADORA");
+        	jugador.setSimboloJugador(determinado);
+        	jugador.setTiempo(0);
+
+
+
     	return;
     }// Si no hay una línea completa para el jugador humano, se determina la jugada de la IA.
-
-	cout << jugador.getJugadas()<<endl;
-	system("pause");
-	if(jugador.getJugadas()==1){
+//Validacion para que la primera jugada sea aleatoria de la IA
+	if(jugador.getMovimiento() == "1"){
 		    do
     	{
         	k = 0;
@@ -945,11 +1032,6 @@ void Negocio::introIa(char (*c)[3], char determinado, int *iDestino, int *jDesti
 	}else{ 
 	    coordenadasParaGanar(determinado, c, &i, &j);
 	            c[i][j] = determinado;
-    cout<<"asdasdasd"<<endl;
-    cout<<i<<endl;
-    cout<<"oponente"<<endl;
-    cout<<oponente<<endl;
-    system("pause");
 	}
         // Obtener las coordenadas para ganar el juego para la IA ('O')
 

@@ -1,0 +1,2 @@
+1, movimiento 1, 0, 1, HUMANO, X, [0], [0]
+2, movimiento 2, 0, 2, COMPUTADORA, O, [2], [2]
